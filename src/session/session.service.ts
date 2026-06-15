@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Raw, In } from 'typeorm';
 import { Session } from './entities/session.entity';
 import { TicketSale } from '../ticket-sale/entities/ticket-sale.entity';
+import { PenaltyTicketSale } from '../penalty-ticket-sale/entities/penalty-ticket-sale.entity';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { CloseSessionDto } from './dto/close-session.dto';
 import { SessionDetailDto } from './dto/session-detail.dto';
@@ -27,6 +28,8 @@ export class SessionService {
     private readonly sessionRepository: Repository<Session>,
     @InjectRepository(TicketSale)
     private readonly ticketSaleRepository: Repository<TicketSale>,
+    @InjectRepository(PenaltyTicketSale)
+    private readonly penaltyTicketSaleRepository: Repository<PenaltyTicketSale>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -710,6 +713,13 @@ export class SessionService {
       relations: ['routeTicket', 'routeTicket.ticketType', 'route'],
     });
 
+    const penaltyTicketSales = await this.penaltyTicketSaleRepository.find({
+      where: {
+        session_id: In(sessionIds),
+      },
+      relations: ['routeTicket', 'routeTicket.ticketType', 'route'],
+    });
+
     const salesByTicketType = [
       ...ticketSales.reduce((map, sale) => {
         const key = sale.routeTicket.ticket_type_id;
@@ -721,12 +731,13 @@ export class SessionService {
           map.set(key, {
             ticket_type_id: key,
             ticket_type_name: sale.routeTicket.ticketType.name,
+            ticket_price: Number(sale.routeTicket.price),
             quantity: sale.quantity,
             total_amount: Number(sale.total),
           });
         }
         return map;
-      }, new Map<number, { ticket_type_id: number; ticket_type_name: string; quantity: number; total_amount: number }>()),
+      }, new Map<number, { ticket_type_id: number; ticket_type_name: string; ticket_price: number; quantity: number; total_amount: number }>()),
     ].map((entry) => entry[1]);
 
     const totalAmountByShiftAndRoute = [
@@ -763,12 +774,69 @@ export class SessionService {
       routes: [...entry[1].routes.values()],
     }));
 
+    const salesByRouteTicketMap = new Map<number, {
+      route_ticket_id: number;
+      route_name: string;
+      ticket_type_name: string;
+      price: number;
+      penalty_price: number;
+      regular_tickets: number;
+      penalty_tickets: number;
+      total_amount: number;
+    }>();
+
+    ticketSales.forEach(sale => {
+      const key = sale.route_ticket_id;
+      if (!salesByRouteTicketMap.has(key)) {
+        salesByRouteTicketMap.set(key, {
+          route_ticket_id: key,
+          route_name: sale.route.name,
+          ticket_type_name: sale.routeTicket.ticketType.name,
+          price: Number(sale.price_at_sale),
+          penalty_price: Number(sale.routeTicket.penalty_price),
+          regular_tickets: 0,
+          penalty_tickets: 0,
+          total_amount: 0,
+        });
+      }
+      const data = salesByRouteTicketMap.get(key)!;
+      data.regular_tickets += sale.quantity;
+      data.total_amount += Number(sale.total);
+    });
+
+    penaltyTicketSales.forEach(sale => {
+      const key = sale.route_ticket_id;
+      if (!salesByRouteTicketMap.has(key)) {
+        salesByRouteTicketMap.set(key, {
+          route_ticket_id: key,
+          route_name: sale.route.name,
+          ticket_type_name: sale.routeTicket.ticketType.name,
+          price: Number(sale.routeTicket.price),
+          penalty_price: Number(sale.penalty_price_at_sale),
+          regular_tickets: 0,
+          penalty_tickets: 0,
+          total_amount: 0,
+        });
+      }
+      const data = salesByRouteTicketMap.get(key)!;
+      data.penalty_tickets += sale.quantity;
+      data.total_amount += Number(sale.total);
+    });
+
+    const salesByRouteTicket = Array.from(salesByRouteTicketMap.values())
+      .map(item => ({
+        ...item,
+        total_tickets: item.regular_tickets + item.penalty_tickets,
+      }))
+      .sort((a, b) => b.total_amount - a.total_amount);
+
     return {
       sessions,
       totalAmount,
       totalAmountByShift,
       salesByTicketType,
       totalAmountByShiftAndRoute,
+      salesByRouteTicket,
     };
   }
 }
