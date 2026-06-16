@@ -275,6 +275,8 @@ export class TicketSaleService {
       .leftJoinAndSelect('ticketSale.operator', 'operator')
       .leftJoinAndSelect('ticketSale.route', 'route')
       .leftJoinAndSelect('ticketSale.driver', 'driver')
+      .leftJoinAndSelect('ticketSale.originRouteStop', 'originRouteStop')
+      .leftJoinAndSelect('ticketSale.destinationRouteStop', 'destinationRouteStop')
       .leftJoinAndSelect('ticketSale.createdBy', 'createdBy')
       .where('ticketSale.deletedAt IS NULL');
 
@@ -336,6 +338,8 @@ export class TicketSaleService {
         'driver',
         'createdBy',
         'updatedBy',
+        'originRouteStop',
+        'destinationRouteStop',
       ],
     });
 
