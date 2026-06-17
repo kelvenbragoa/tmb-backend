@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { IPaginationOptions, paginate } from 'nestjs-typeorm-paginate';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -78,8 +78,11 @@ export class UserService {
     return user;
   }
 
-  async findAll(options: IPaginationOptions, organizationId?: number) {
+  async findAll(options: IPaginationOptions, searchQuery?: string) {
     const whereCondition = {};
+    if (searchQuery) {
+      whereCondition['name'] = ILike(`%${searchQuery}%`);
+    }
     return paginate(this.userRepository, options, {
       select: ['id', 'name', 'username', 'role'],
       where: whereCondition,

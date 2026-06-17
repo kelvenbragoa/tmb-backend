@@ -640,7 +640,7 @@ export class SessionService {
     const session = await this.findSessionById(sessionId);
 
     if (session.status !== SessionStatus.OPEN) {
-      throw new BadRequestException('Session is not open');
+      throw new BadRequestException('Session is not open : session id ' + sessionId);
     }
 
     if (session.operator_id !== operatorId) {
