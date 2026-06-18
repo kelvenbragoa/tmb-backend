@@ -108,7 +108,12 @@ export class UserService {
     if (updateUserDto.password) {
       hashedPassword = await bcrypt.hash(updateUserDto.password, 10);
     }
-    
+
+    console.log('🔍 Dados para atualizar usuário:', {
+      updateUserDto
+    });
+    console.log(hashedPassword)
+
     const result = await this.userRepository.update(id, {
       name: updateUserDto.name ? updateUserDto.name : undefined,
       username: updateUserDto.username ? updateUserDto.username : undefined,
