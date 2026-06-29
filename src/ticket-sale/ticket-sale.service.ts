@@ -122,11 +122,15 @@ export class TicketSaleService {
           updatedBy: user,
         });
 
-        const savedSale = await manager.save(TicketSale, ticketSale);
-        savedSales.push(savedSale);
-
-        totalSalesAmount += total;
-        totalTicketsCount += createTicketSaleDto.quantity;
+        try {
+          const savedSale = await manager.save(TicketSale, ticketSale);
+          savedSales.push(savedSale);
+  
+          totalSalesAmount += total;
+          totalTicketsCount += createTicketSaleDto.quantity;          
+        } catch (error) {
+          continue;
+        }
       }
 
       // Atualizar sessão com totais acumulados

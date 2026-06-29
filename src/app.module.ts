@@ -33,7 +33,7 @@ import { TicketPrintLogModule } from './ticket-print-log/ticket-print-log.module
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      synchronize: true, // Temporariamente desabilitado para resolver conflito de índice
+      synchronize: false, // Temporariamente desabilitado para resolver conflito de índice
       // entities: [User],
       autoLoadEntities: true,
     }),
