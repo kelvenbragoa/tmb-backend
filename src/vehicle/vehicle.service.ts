@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, ILike } from 'typeorm';
 import { Vehicle } from './entities/vehicle.entity';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
@@ -67,10 +67,21 @@ export class VehicleService {
   //   return paginate<Vehicle>(queryBuilder, options);
   // }
 
-  async findAll(options: IPaginationOptions): Promise<Pagination<Vehicle>> {
+  async findAll(
+    options: IPaginationOptions,
+    searchQuery?: string,
+  ): Promise<Pagination<Vehicle>> {
+    const whereCondition = searchQuery
+      ? [
+          { plate: ILike(`%${searchQuery}%`) },
+          { name: ILike(`%${searchQuery}%`) },
+        ]
+      : {};
+
     return await paginate<Vehicle>(this.vehicleRepository, options, {
       relations: ['routes'],
-      order: { name: 'ASC' },
+      order: { createdAt: 'DESC' },
+      where: whereCondition,
     });
   }
 

@@ -39,12 +39,13 @@ export class TicketTypeController {
   findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 50,
+    @Query('search') searchQuery?: string,
   ) {
     const options: IPaginationOptions = {
       page,
       limit: limit,
     };
-    return this.ticketTypeService.findAll(options);
+    return this.ticketTypeService.findAll(options, searchQuery);
   }
 
   @Get(':id')

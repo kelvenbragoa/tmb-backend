@@ -17,9 +17,10 @@ export class ShiftsController {
   findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 50,
+    @Query('search') searchQuery?: string,
   ) {
     const options: IPaginationOptions = { page, limit: Math.min(limit, 50) };
-    return this.shiftsService.findAll(options);
+    return this.shiftsService.findAll(options, searchQuery);
   }
 
   @Get(':id')

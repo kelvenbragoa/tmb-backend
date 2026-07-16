@@ -40,12 +40,13 @@ export class RouteTicketController {
   findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 50,
+    @Query('search') searchQuery?: string,
   ) {
     const options: IPaginationOptions = {
       page,
       limit: limit,
     };
-    return this.routeTicketService.findAll(options);
+    return this.routeTicketService.findAll(options, searchQuery);
   }
 
   @Get(':id')

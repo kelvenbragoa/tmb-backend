@@ -40,12 +40,13 @@ export class TransportRouteController {
   findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 200,
+    @Query('search') searchQuery?: string,
   ) {
     const options: IPaginationOptions = {
       page,
       limit: limit,
     };
-    return this.routeService.findAll(options);
+    return this.routeService.findAll(options, searchQuery);
   }
 
   @Get(':id')

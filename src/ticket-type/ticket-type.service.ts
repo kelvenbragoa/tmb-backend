@@ -43,12 +43,13 @@ export class TicketTypeService {
     return await this.ticketTypeRepository.save(ticketType);
   }
 
-  async findAll(options: IPaginationOptions): Promise<Pagination<TicketType>> {
+  async findAll(options: IPaginationOptions, searchQuery?: string): Promise<Pagination<TicketType>> {
     const queryBuilder = this.ticketTypeRepository
       .createQueryBuilder('ticketType')
       .leftJoinAndSelect('ticketType.createdBy', 'createdBy')
       .leftJoinAndSelect('ticketType.updatedBy', 'updatedBy')
       .where('ticketType.deletedAt IS NULL')
+      .andWhere('ticketType.name iLIKE :searchQuery', { searchQuery: `%${searchQuery}%` })
       .orderBy('ticketType.createdAt', 'DESC');
 
     return await paginate<TicketType>(queryBuilder, options);

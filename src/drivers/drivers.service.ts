@@ -18,10 +18,11 @@ export class DriversService {
     return await this.driverRepository.save(driver);
   }
 
-  async findAll(options: IPaginationOptions): Promise<Pagination<Driver>> {
+  async findAll(options: IPaginationOptions, searchQuery?: string): Promise<Pagination<Driver>> {
     const queryBuilder = this.driverRepository
       .createQueryBuilder('driver')
       .where('driver.deletedAt IS NULL')
+      .andWhere('driver.name iLIKE :searchQuery', { searchQuery: `%${searchQuery}%` })
       .orderBy('driver.createdAt', 'DESC');
 
     return await paginate<Driver>(queryBuilder, options);

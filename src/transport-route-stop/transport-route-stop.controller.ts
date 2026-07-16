@@ -39,12 +39,13 @@ export class TransportRouteStopController {
   findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 50,
+    @Query('search') searchQuery?: string,
   ) {
     const options: IPaginationOptions = {
       page,
       limit: limit,
     };
-    return this.stopService.findAll(options);
+    return this.stopService.findAll(options, searchQuery);
   }
 
   @Get('route/:routeId')

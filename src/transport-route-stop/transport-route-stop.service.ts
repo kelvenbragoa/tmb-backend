@@ -33,6 +33,7 @@ export class TransportRouteStopService {
 
   async findAll(
     options: IPaginationOptions,
+    searchQuery?: string,
   ): Promise<Pagination<TransportRouteStop>> {
     const queryBuilder = this.stopRepository
       .createQueryBuilder('stop')
@@ -40,6 +41,7 @@ export class TransportRouteStopService {
       .leftJoinAndSelect('stop.createdBy', 'createdBy')
       .leftJoinAndSelect('stop.updatedBy', 'updatedBy')
       .where('stop.deletedAt IS NULL')
+      .andWhere('stop.name iLIKE :searchQuery', { searchQuery: `%${searchQuery}%` })
       .orderBy('stop.routeId', 'ASC')
       .addOrderBy('stop.order', 'ASC');
 

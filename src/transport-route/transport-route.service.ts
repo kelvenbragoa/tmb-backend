@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { TransportRoute } from './entities/transport-route.entity';
 import { CreateTransportRouteDto } from './dto/create-transport-route.dto';
 import { UpdateTransportRouteDto } from './dto/update-transport-route.dto';
@@ -50,7 +50,12 @@ export class TransportRouteService {
 
   async findAll(
     options: IPaginationOptions,
+    searchQuery?: string,
   ): Promise<Pagination<TransportRoute>> {
+    const whereCondition = {};
+    if (searchQuery) {
+      whereCondition['name'] = ILike(`%${searchQuery}%`);
+    }
     return await paginate<TransportRoute>(this.routeRepository, options, {
       relations: [
         'createdBy',
@@ -60,6 +65,7 @@ export class TransportRouteService {
         'routeTickets',
         'routeTickets.ticketType',
       ],
+      where: whereCondition,
       order: { createdAt: 'DESC' },
     });
   }

@@ -33,12 +33,14 @@ export class TransportRouteCategoryService {
 
   async findAll(
     options: IPaginationOptions,
+    searchQuery?: string,
   ): Promise<Pagination<TransportRouteCategory>> {
     const queryBuilder = this.categoryRepository
       .createQueryBuilder('category')
       .leftJoinAndSelect('category.createdBy', 'createdBy')
       .leftJoinAndSelect('category.updatedBy', 'updatedBy')
       .where('category.deletedAt IS NULL')
+      .andWhere('category.name iLIKE :searchQuery', { searchQuery: `%${searchQuery}%` })
       .orderBy('category.createdAt', 'DESC');
 
     return await paginate<TransportRouteCategory>(queryBuilder, options);

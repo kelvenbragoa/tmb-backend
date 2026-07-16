@@ -91,5 +91,13 @@ export class SessionController {
     return this.sessionService.closeSession(id, closeSessionDto, user);
   }
 
+  @Post(':id/reopen')
+  reopenSession(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser() user: User,
+  ) {
+    return this.sessionService.reopenSession(id, user);
+  }
+
 
 }

@@ -839,4 +839,27 @@ export class SessionService {
       salesByRouteTicket,
     };
   }
+
+  async reopenSession(id: number, user: User): Promise<void> {
+    const session = await this.sessionRepository.findOne({
+      where: { id },
+    });
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    if (session.status !== SessionStatus.CLOSED) {
+      throw new BadRequestException('Session is not closed');
+    }
+
+    session.status = SessionStatus.OPEN;
+    session.opened_at = new Date();
+    session.closed_at = null as unknown as Date;
+    session.closed_by_id = null as unknown as number;
+    session.actual_amount_delivered = null as unknown as number;
+    session.updatedBy = user;
+    
+    // return await this.sessionRepository.save(Session, session);
+  }
 }

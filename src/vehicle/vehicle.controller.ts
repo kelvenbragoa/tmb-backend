@@ -39,11 +39,12 @@ export class VehicleController {
   findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 50,
+    @Query('search') searchQuery?: string,
   ) {
     return this.vehicleService.findAll({
       page,
       limit,
-    });
+    }, searchQuery);
   }
 
   @Get('active')

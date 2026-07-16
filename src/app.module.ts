@@ -22,6 +22,7 @@ import { DriversModule } from './drivers/drivers.module';
 import { ShiftsModule } from './shifts/shifts.module';
 import { PenaltyTicketSaleModule } from './penalty-ticket-sale/penalty-ticket-sale.module';
 import { TicketPrintLogModule } from './ticket-print-log/ticket-print-log.module';
+import { SessionActivityLogModule } from './session-activity-log/session-activity-log.module';
 
 @Module({
   imports: [
@@ -33,7 +34,7 @@ import { TicketPrintLogModule } from './ticket-print-log/ticket-print-log.module
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      synchronize: false, // Temporariamente desabilitado para resolver conflito de índice
+      synchronize: true, // Temporariamente desabilitado para resolver conflito de índice
       // entities: [User],
       autoLoadEntities: true,
     }),
@@ -54,6 +55,7 @@ import { TicketPrintLogModule } from './ticket-print-log/ticket-print-log.module
     DashboardModule,
     ShiftsModule,
     DriversModule,
+    SessionActivityLogModule,
   ],
   providers: [
     {

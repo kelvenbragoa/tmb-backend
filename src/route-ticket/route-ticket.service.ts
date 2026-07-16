@@ -53,7 +53,10 @@ export class RouteTicketService {
     return await this.routeTicketRepository.save(routeTicket);
   }
 
-  async findAll(options: IPaginationOptions): Promise<Pagination<RouteTicket>> {
+  async findAll(
+    options: IPaginationOptions,
+    searchQuery?: string,
+  ): Promise<Pagination<RouteTicket>> {
     const queryBuilder = this.routeTicketRepository
       .createQueryBuilder('routeTicket')
       .leftJoinAndSelect('routeTicket.route', 'route')
@@ -62,6 +65,12 @@ export class RouteTicketService {
       .leftJoinAndSelect('routeTicket.updatedBy', 'updatedBy')
       .where('routeTicket.deletedAt IS NULL')
       .orderBy('routeTicket.createdAt', 'DESC');
+
+    if (searchQuery) {
+      queryBuilder.andWhere('route.name iLIKE :searchQuery', {
+        searchQuery: `%${searchQuery}%`,
+      });
+    }
 
     return await paginate<RouteTicket>(queryBuilder, options);
   }

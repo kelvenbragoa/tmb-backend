@@ -18,10 +18,11 @@ export class ShiftsService {
     return await this.shiftRepository.save(shift);
   }
 
-  async findAll(options: IPaginationOptions): Promise<Pagination<Shift>> {
+  async findAll(options: IPaginationOptions, searchQuery?: string): Promise<Pagination<Shift>> {
     const qb = this.shiftRepository
       .createQueryBuilder('shift')
       .where('shift.deletedAt IS NULL')
+      .andWhere('shift.name iLIKE :searchQuery', { searchQuery: `%${searchQuery}%` })
       .orderBy('shift.createdAt', 'DESC');
 
     return await paginate<Shift>(qb, options);

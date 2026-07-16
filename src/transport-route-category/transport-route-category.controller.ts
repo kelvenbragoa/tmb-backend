@@ -39,12 +39,13 @@ export class TransportRouteCategoryController {
   findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 50,
+    @Query('search') searchQuery?: string,
   ) {
     const options: IPaginationOptions = {
       page,
       limit: limit,
     };
-    return this.categoryService.findAll(options);
+    return this.categoryService.findAll(options, searchQuery);
   }
 
   @Get(':id')
