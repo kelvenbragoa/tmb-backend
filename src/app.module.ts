@@ -23,6 +23,9 @@ import { ShiftsModule } from './shifts/shifts.module';
 import { PenaltyTicketSaleModule } from './penalty-ticket-sale/penalty-ticket-sale.module';
 import { TicketPrintLogModule } from './ticket-print-log/ticket-print-log.module';
 import { SessionActivityLogModule } from './session-activity-log/session-activity-log.module';
+import { ReportsModule } from './reports/reports.module';
+import { LicenseModule } from './license/license.module';
+import { LicenseGuard } from './license/license.guard';
 
 @Module({
   imports: [
@@ -56,6 +59,8 @@ import { SessionActivityLogModule } from './session-activity-log/session-activit
     ShiftsModule,
     DriversModule,
     SessionActivityLogModule,
+    ReportsModule,
+    LicenseModule,
   ],
   providers: [
     {
@@ -65,6 +70,10 @@ import { SessionActivityLogModule } from './session-activity-log/session-activit
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: LicenseGuard,
     },
   ],
 })

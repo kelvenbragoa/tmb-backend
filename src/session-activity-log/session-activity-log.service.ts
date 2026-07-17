@@ -1,26 +1,63 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateSessionActivityLogDto } from './dto/create-session-activity-log.dto';
 import { UpdateSessionActivityLogDto } from './dto/update-session-activity-log.dto';
+import { SessionActivityLog } from './entities/session-activity-log.entity';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class SessionActivityLogService {
-  create(createSessionActivityLogDto: CreateSessionActivityLogDto) {
-    return 'This action adds a new sessionActivityLog';
+  constructor(
+    @InjectRepository(SessionActivityLog)
+    private readonly activityLogRepository: Repository<SessionActivityLog>,
+  ) {}
+
+  async create(
+    createSessionActivityLogDto: CreateSessionActivityLogDto,
+    user?: User,
+  ): Promise<SessionActivityLog> {
+    const log = this.activityLogRepository.create({
+      ...createSessionActivityLogDto,
+      createdBy: user,
+      updatedBy: user,
+    });
+
+    return this.activityLogRepository.save(log);
   }
 
-  findAll() {
-    return `This action returns all sessionActivityLog`;
+  async findAll(): Promise<SessionActivityLog[]> {
+    return this.activityLogRepository.find({
+      order: { createdAt: 'DESC' },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} sessionActivityLog`;
+  async findBySession(sessionId: number): Promise<SessionActivityLog[]> {
+    return this.activityLogRepository.find({
+      where: { session_id: sessionId },
+      order: { createdAt: 'DESC' },
+    });
   }
 
-  update(id: number, updateSessionActivityLogDto: UpdateSessionActivityLogDto) {
-    return `This action updates a #${id} sessionActivityLog`;
+  async findOne(id: number): Promise<SessionActivityLog> {
+    const log = await this.activityLogRepository.findOne({ where: { id } });
+    if (!log) {
+      throw new NotFoundException(`Session activity log #${id} not found`);
+    }
+    return log;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} sessionActivityLog`;
+  async update(
+    id: number,
+    updateSessionActivityLogDto: UpdateSessionActivityLogDto,
+  ): Promise<SessionActivityLog> {
+    const log = await this.findOne(id);
+    Object.assign(log, updateSessionActivityLogDto);
+    return this.activityLogRepository.save(log);
+  }
+
+  async remove(id: number): Promise<void> {
+    await this.findOne(id);
+    await this.activityLogRepository.softDelete(id);
   }
 }

@@ -73,7 +73,10 @@ export class DashboardService {
       sessionAnalysis,
       revenueAnalysis,
       filters: {
-        applied_period: filters.period || DatePeriod.LAST_30_DAYS,
+        applied_period:
+          filters.start_date && filters.end_date
+            ? DatePeriod.CUSTOM
+            : filters.period || DatePeriod.LAST_30_DAYS,
         start_date: dateRange.startDate.toISOString().split('T')[0],
         end_date: dateRange.endDate.toISOString().split('T')[0],
         route_ids: filters.route_ids || [],
@@ -89,9 +92,16 @@ export class DashboardService {
     let startDate: Date;
     let endDate: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
-    if (filters.period === DatePeriod.CUSTOM && filters.start_date && filters.end_date) {
-      startDate = new Date(filters.start_date);
-      endDate = new Date(filters.end_date);
+    const hasCustomDates = Boolean(filters.start_date && filters.end_date);
+
+    if (hasCustomDates || filters.period === DatePeriod.CUSTOM) {
+      if (!filters.start_date || !filters.end_date) {
+        // Fallback to last 30 days when custom is requested without both dates
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29, 0, 0, 0);
+      } else {
+        startDate = this.parseStartDate(filters.start_date);
+        endDate = this.parseEndDate(filters.end_date);
+      }
     } else {
       switch (filters.period) {
         case DatePeriod.TODAY:
@@ -131,6 +141,28 @@ export class DashboardService {
     return { startDate, endDate };
   }
 
+  /** Parses YYYY-MM-DD (or ISO) as start of local day. */
+  private parseStartDate(value: string): Date {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [year, month, day] = value.split('-').map(Number);
+      return new Date(year, month - 1, day, 0, 0, 0);
+    }
+    const date = new Date(value);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  /** Parses YYYY-MM-DD (or ISO) as end of local day. */
+  private parseEndDate(value: string): Date {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [year, month, day] = value.split('-').map(Number);
+      return new Date(year, month - 1, day, 23, 59, 59);
+    }
+    const date = new Date(value);
+    date.setHours(23, 59, 59, 999);
+    return date;
+  }
+
   private async getOverview(
     dateRange: { startDate: Date; endDate: Date },
     filters: DashboardFiltersDto,
@@ -147,8 +179,8 @@ export class DashboardService {
       .andWhere('sale.createdAt <= :endDate', { endDate: dateRange.endDate });
 
     // Apply filters
-    this.applyFilters(baseSessionQuery, filters, 'session');
-    this.applyFilters(baseSaleQuery, filters, 'session');
+    this.applyFilters(baseSessionQuery, filters, { session: 'session' });
+    this.applyFilters(baseSaleQuery, filters, { session: 'session', sale: 'sale' });
 
     const [
       totalUsers,
@@ -228,7 +260,7 @@ export class DashboardService {
       .groupBy('DATE(sale.createdAt)')
       .orderBy('DATE(sale.createdAt)', 'ASC');
 
-    this.applyFilters(query, filters, 'session');
+    this.applyFilters(query, filters, { session: 'session', sale: 'sale' });
 
     const results = await query.getRawMany();
     
@@ -262,7 +294,7 @@ export class DashboardService {
       .groupBy('route.id, route.name')
       .orderBy('total_revenue', 'DESC');
 
-    this.applyFilters(query, filters, 'session');
+    this.applyFilters(query, filters, { session: 'session', sale: 'sale' });
 
     const results = await query.getRawMany();
     
@@ -300,7 +332,7 @@ export class DashboardService {
       .groupBy('operator.id, operator.name')
       .orderBy('total_revenue', 'DESC');
 
-    this.applyFilters(query, filters, 'session');
+    this.applyFilters(query, filters, { session: 'session', sale: 'sale' });
 
     const results = await query.getRawMany();
     
@@ -341,7 +373,7 @@ export class DashboardService {
       .groupBy('vehicle.id, vehicle.name, vehicle.plate')
       .orderBy('total_revenue', 'DESC');
 
-    this.applyFilters(query, filters, 'session');
+    this.applyFilters(query, filters, { session: 'session', sale: 'sale' });
 
     const results = await query.getRawMany();
     
@@ -369,7 +401,7 @@ export class DashboardService {
       .where('sale.createdAt >= :startDate', { startDate: dateRange.startDate })
       .andWhere('sale.createdAt <= :endDate', { endDate: dateRange.endDate });
 
-    this.applyFilters(totalQuery, filters, 'session');
+    this.applyFilters(totalQuery, filters, { session: 'session', sale: 'sale' });
     const totalResult = await totalQuery.getRawOne();
     const totalSold = Number(totalResult?.total) || 1;
 
@@ -391,7 +423,7 @@ export class DashboardService {
       .groupBy('ticketType.id, ticketType.name')
       .orderBy('total_sold', 'DESC');
 
-    this.applyFilters(query, filters, 'session');
+    this.applyFilters(query, filters, { session: 'session', sale: 'sale' });
 
     const results = await query.getRawMany();
     
@@ -414,7 +446,39 @@ export class DashboardService {
       .where('session.createdAt >= :startDate', { startDate: dateRange.startDate })
       .andWhere('session.createdAt <= :endDate', { endDate: dateRange.endDate });
 
-    this.applyFilters(sessionQuery, filters, 'session');
+    this.applyFilters(sessionQuery, filters, { session: 'session' });
+
+    const peakHoursQuery = this.ticketSaleRepository
+      .createQueryBuilder('sale')
+      .innerJoin('sale.session', 'session')
+      .select([
+        'EXTRACT(HOUR FROM sale.createdAt) as hour',
+        'COUNT(sale.id) as sales_count',
+      ])
+      .where('sale.createdAt >= :startDate', { startDate: dateRange.startDate })
+      .andWhere('sale.createdAt <= :endDate', { endDate: dateRange.endDate })
+      .groupBy('EXTRACT(HOUR FROM sale.createdAt)')
+      .orderBy('sales_count', 'DESC')
+      .limit(24);
+
+    this.applyFilters(peakHoursQuery, filters, { session: 'session', sale: 'sale' });
+
+    const busiestRoutesQuery = this.ticketSaleRepository
+      .createQueryBuilder('sale')
+      .innerJoin('sale.session', 'session')
+      .innerJoin('sale.route', 'route')
+      .select([
+        'route.id as route_id',
+        'route.name as route_name',
+        'COUNT(DISTINCT session.id) as sessions_count',
+      ])
+      .where('session.createdAt >= :startDate', { startDate: dateRange.startDate })
+      .andWhere('session.createdAt <= :endDate', { endDate: dateRange.endDate })
+      .groupBy('route.id, route.name')
+      .orderBy('sessions_count', 'DESC')
+      .limit(10);
+
+    this.applyFilters(busiestRoutesQuery, filters, { session: 'session', sale: 'sale' });
 
     const [avgDurationResult, avgSalesResult, peakHours, busiestRoutes] = await Promise.all([
       sessionQuery
@@ -427,35 +491,8 @@ export class DashboardService {
         .select('AVG(session.total_sales) as avg_sales')
         .getRawOne(),
       
-      this.ticketSaleRepository
-        .createQueryBuilder('sale')
-        .innerJoin('sale.session', 'session')
-        .select([
-          'EXTRACT(HOUR FROM sale.createdAt) as hour',
-          'COUNT(sale.id) as sales_count',
-        ])
-        .where('sale.createdAt >= :startDate', { startDate: dateRange.startDate })
-        .andWhere('sale.createdAt <= :endDate', { endDate: dateRange.endDate })
-        .groupBy('EXTRACT(HOUR FROM sale.createdAt)')
-        .orderBy('sales_count', 'DESC')
-        .limit(24)
-        .getRawMany(),
-      
-      this.ticketSaleRepository
-        .createQueryBuilder('sale')
-        .innerJoin('sale.session', 'session')
-        .innerJoin('sale.route', 'route')
-        .select([
-          'route.id as route_id',
-          'route.name as route_name',
-          'COUNT(DISTINCT session.id) as sessions_count',
-        ])
-        .where('session.createdAt >= :startDate', { startDate: dateRange.startDate })
-        .andWhere('session.createdAt <= :endDate', { endDate: dateRange.endDate })
-        .groupBy('route.id, route.name')
-        .orderBy('sessions_count', 'DESC')
-        .limit(10)
-        .getRawMany(),
+      peakHoursQuery.getRawMany(),
+      busiestRoutesQuery.getRawMany(),
     ]);
 
     return {
@@ -483,7 +520,7 @@ export class DashboardService {
       .where('sale.createdAt >= :startDate', { startDate: dateRange.startDate })
       .andWhere('sale.createdAt <= :endDate', { endDate: dateRange.endDate });
 
-    this.applyFilters(baseQuery, filters, 'session');
+    this.applyFilters(baseQuery, filters, { session: 'session', sale: 'sale' });
 
     const [totalRevenueResult, revenueByRoute] = await Promise.all([
       baseQuery
@@ -521,7 +558,7 @@ export class DashboardService {
       .where('sale.createdAt >= :startDate', { startDate: previousPeriodStart })
       .andWhere('sale.createdAt <= :endDate', { endDate: previousPeriodEnd });
 
-    this.applyFilters(previousRevenueQuery, filters, 'session');
+    this.applyFilters(previousRevenueQuery, filters, { session: 'session', sale: 'sale' });
     
     const previousRevenueResult = await previousRevenueQuery.getRawOne();
     const previousRevenue = Number(previousRevenueResult?.total_revenue) || 0;
@@ -545,21 +582,82 @@ export class DashboardService {
     };
   }
 
-  private applyFilters(query: any, filters: DashboardFiltersDto, sessionAlias: string): void {
-    if (filters.route_ids && Array.isArray(filters.route_ids) && filters.route_ids.length > 0) {
-      query.andWhere(`${sessionAlias}.route_id IN (:...routeIds)`, { routeIds: filters.route_ids });
+  private applyFilters(
+    query: any,
+    filters: DashboardFiltersDto,
+    aliases: { session: string; sale?: string },
+  ): void {
+    const { session, sale } = aliases;
+
+    if (filters.operator_ids?.length) {
+      query.andWhere(`${session}.operator_id IN (:...operatorIds)`, {
+        operatorIds: filters.operator_ids,
+      });
     }
 
-    if (filters.vehicle_ids && Array.isArray(filters.vehicle_ids) && filters.vehicle_ids.length > 0) {
-      query.andWhere(`${sessionAlias}.vehicle_id IN (:...vehicleIds)`, { vehicleIds: filters.vehicle_ids });
+    if (sale) {
+      if (filters.route_ids?.length) {
+        query.andWhere(`${sale}.route_id IN (:...routeIds)`, {
+          routeIds: filters.route_ids,
+        });
+      }
+
+      if (filters.vehicle_ids?.length) {
+        query.andWhere(`${sale}.vehicle_id IN (:...vehicleIds)`, {
+          vehicleIds: filters.vehicle_ids,
+        });
+      }
+
+      if (filters.ticket_type_ids?.length) {
+        query.andWhere(
+          `EXISTS (
+            SELECT 1 FROM route_tickets rt
+            WHERE rt.id = ${sale}.route_ticket_id
+              AND rt.ticket_type_id IN (:...ticketTypeIds)
+          )`,
+          { ticketTypeIds: filters.ticket_type_ids },
+        );
+      }
+
+      return;
     }
 
-    if (filters.operator_ids && Array.isArray(filters.operator_ids) && filters.operator_ids.length > 0) {
-      query.andWhere(`${sessionAlias}.operator_id IN (:...operatorIds)`, { operatorIds: filters.operator_ids });
-    }
+    // Session-only queries: route/vehicle/ticket_type live on ticket_sales
+    if (
+      filters.route_ids?.length ||
+      filters.vehicle_ids?.length ||
+      filters.ticket_type_ids?.length
+    ) {
+      const conditions: string[] = [`ts.session_id = ${session}.id`];
+      const params: Record<string, number[]> = {};
 
-    if (filters.ticket_type_ids && Array.isArray(filters.ticket_type_ids) && filters.ticket_type_ids.length > 0) {
-      query.andWhere('routeTicket.ticket_type_id IN (:...ticketTypeIds)', { ticketTypeIds: filters.ticket_type_ids });
+      if (filters.route_ids?.length) {
+        conditions.push('ts.route_id IN (:...routeIds)');
+        params.routeIds = filters.route_ids;
+      }
+
+      if (filters.vehicle_ids?.length) {
+        conditions.push('ts.vehicle_id IN (:...vehicleIds)');
+        params.vehicleIds = filters.vehicle_ids;
+      }
+
+      if (filters.ticket_type_ids?.length) {
+        conditions.push('rt.ticket_type_id IN (:...ticketTypeIds)');
+        params.ticketTypeIds = filters.ticket_type_ids;
+      }
+
+      const ticketTypeJoin = filters.ticket_type_ids?.length
+        ? 'INNER JOIN route_tickets rt ON rt.id = ts.route_ticket_id'
+        : '';
+
+      query.andWhere(
+        `EXISTS (
+          SELECT 1 FROM ticket_sales ts
+          ${ticketTypeJoin}
+          WHERE ${conditions.join(' AND ')}
+        )`,
+        params,
+      );
     }
   }
 }

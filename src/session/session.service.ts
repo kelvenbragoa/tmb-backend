@@ -20,6 +20,7 @@ import {
   IPaginationOptions,
 } from 'nestjs-typeorm-paginate';
 import { Role } from '../user/entities/role.enum';
+import { SessionActivityLogService } from '../session-activity-log/session-activity-log.service';
 
 @Injectable()
 export class SessionService {
@@ -30,6 +31,7 @@ export class SessionService {
     private readonly ticketSaleRepository: Repository<TicketSale>,
     @InjectRepository(PenaltyTicketSale)
     private readonly penaltyTicketSaleRepository: Repository<PenaltyTicketSale>,
+    private readonly sessionActivityLogService: SessionActivityLogService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -840,7 +842,7 @@ export class SessionService {
     };
   }
 
-  async reopenSession(id: number, user: User): Promise<void> {
+  async reopenSession(id: number, user: User): Promise<Session> {
     const session = await this.sessionRepository.findOne({
       where: { id },
     });
@@ -853,13 +855,36 @@ export class SessionService {
       throw new BadRequestException('Session is not closed');
     }
 
+    const openSession = await this.sessionRepository.findOne({
+      where: {
+        operator_id: session.operator_id,
+        status: SessionStatus.OPEN,
+      },
+    });
+
+    if (openSession) {
+      throw new BadRequestException(
+        'Operator already has an open session. Close it before reopening another.',
+      );
+    }
+
     session.status = SessionStatus.OPEN;
-    session.opened_at = new Date();
     session.closed_at = null as unknown as Date;
     session.closed_by_id = null as unknown as number;
-    session.actual_amount_delivered = null as unknown as number;
+    session.actual_amount_delivered = null;
     session.updatedBy = user;
-    
-    // return await this.sessionRepository.save(Session, session);
+
+    const savedSession = await this.sessionRepository.save(session);
+
+    await this.sessionActivityLogService.create(
+      {
+        session_id: savedSession.id,
+        user_id: user.id,
+        activity: 'SESSION_REOPENED',
+      },
+      user,
+    );
+
+    return savedSession;
   }
 }

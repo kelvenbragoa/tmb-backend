@@ -22,7 +22,11 @@ async function bootstrap() {
     join(__dirname, '..', '..', 'uploads'),
   );
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+    }),
+  );
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI });
 
