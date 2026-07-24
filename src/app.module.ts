@@ -26,6 +26,7 @@ import { SessionActivityLogModule } from './session-activity-log/session-activit
 import { ReportsModule } from './reports/reports.module';
 import { LicenseModule } from './license/license.module';
 import { LicenseGuard } from './license/license.guard';
+import { PassModule } from './pass/pass.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { LicenseGuard } from './license/license.guard';
     SessionActivityLogModule,
     ReportsModule,
     LicenseModule,
+    PassModule,
   ],
   providers: [
     {
