@@ -35,7 +35,7 @@ export class TicketTypeController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.OPERATOR)
+  @Roles(Role.ADMIN, Role.OPERATOR, Role.CAIXA, Role.GESTOR, Role.COORDENADOR, Role.SUPERVISOR)
   findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 50,

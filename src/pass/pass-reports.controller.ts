@@ -12,13 +12,13 @@ export class PassReportsController {
   constructor(private readonly reportsService: PassReportsService) {}
 
   @Get('revenue-by-month')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.SUPERVISOR)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.SUPERVISOR, Role.OPERATOR)
   revenueByMonth(@Query('year') year?: number) {
     return this.reportsService.revenueByMonth(year ? +year : undefined);
   }
 
   @Get('revenue-by-category')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.SUPERVISOR)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.SUPERVISOR, Role.OPERATOR)
   revenueByCategory(
     @Query('year') year?: number,
     @Query('month') month?: ReferenceMonth,
@@ -30,7 +30,7 @@ export class PassReportsController {
   }
 
   @Get('revenue-by-destination')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.SUPERVISOR)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.SUPERVISOR, Role.OPERATOR)
   revenueByDestination(
     @Query('year') year?: number,
     @Query('month') month?: ReferenceMonth,
@@ -42,7 +42,7 @@ export class PassReportsController {
   }
 
   @Get('revenue-by-operator')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.SUPERVISOR)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.SUPERVISOR, Role.OPERATOR)
   revenueByOperator(
     @Query('year') year?: number,
     @Query('month') month?: ReferenceMonth,
@@ -54,13 +54,13 @@ export class PassReportsController {
   }
 
   @Get('status-counts')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.SUPERVISOR)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.SUPERVISOR, Role.OPERATOR)
   statusCounts() {
     return this.reportsService.passesByStatus();
   }
 
   @Get('summary')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.SUPERVISOR)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.SUPERVISOR, Role.OPERATOR)
   summary(
     @Query('year') year: number,
     @Query('month') month: ReferenceMonth,

@@ -31,7 +31,7 @@ export class PassController {
   constructor(private readonly passService: PassService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.CAIXA)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.CAIXA, Role.OPERATOR)
   create(@Body() dto: CreatePassDto, @GetUser() user: User) {
     return this.passService.create(dto, user);
   }
@@ -86,13 +86,13 @@ export class PassController {
   }
 
   @Post('payments')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.CAIXA)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.CAIXA, Role.OPERATOR)
   createPayment(@Body() dto: CreatePaymentDto, @GetUser() user: User) {
     return this.passService.createPayment(dto, user);
   }
 
   @Post('renew')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.CAIXA)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.CAIXA, Role.OPERATOR)
   renew(@Body() dto: RenewPassDto, @GetUser() user: User) {
     return this.passService.renew(dto, user);
   }
@@ -111,7 +111,7 @@ export class PassController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.CAIXA)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.CAIXA, Role.OPERATOR)
   update(
     @Param('id') id: string,
     @Body() dto: UpdatePassDto,
@@ -127,7 +127,7 @@ export class PassController {
   }
 
   @Patch(':id/status')
-  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR)
+  @Roles(Role.ADMIN, Role.GESTOR, Role.COORDENADOR, Role.OPERATOR)
   updateStatus(
     @Param('id') id: string,
     @Body('status') status: PassStatus,
