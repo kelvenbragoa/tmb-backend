@@ -41,9 +41,14 @@ export class TransportRouteStopService {
       .leftJoinAndSelect('stop.createdBy', 'createdBy')
       .leftJoinAndSelect('stop.updatedBy', 'updatedBy')
       .where('stop.deletedAt IS NULL')
-      .andWhere('stop.name iLIKE :searchQuery', { searchQuery: `%${searchQuery}%` })
       .orderBy('stop.routeId', 'ASC')
       .addOrderBy('stop.order', 'ASC');
+
+    if (searchQuery) {
+      queryBuilder.andWhere('stop.name iLIKE :searchQuery', {
+        searchQuery: `%${searchQuery}%`,
+      });
+    }
 
     return await paginate<TransportRouteStop>(queryBuilder, options);
   }

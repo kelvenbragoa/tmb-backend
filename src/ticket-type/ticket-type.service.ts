@@ -49,8 +49,13 @@ export class TicketTypeService {
       .leftJoinAndSelect('ticketType.createdBy', 'createdBy')
       .leftJoinAndSelect('ticketType.updatedBy', 'updatedBy')
       .where('ticketType.deletedAt IS NULL')
-      .andWhere('ticketType.name iLIKE :searchQuery', { searchQuery: `%${searchQuery}%` })
       .orderBy('ticketType.createdAt', 'DESC');
+
+    if (searchQuery) {
+      queryBuilder.andWhere('ticketType.name iLIKE :searchQuery', {
+        searchQuery: `%${searchQuery}%`,
+      });
+    }
 
     return await paginate<TicketType>(queryBuilder, options);
   }

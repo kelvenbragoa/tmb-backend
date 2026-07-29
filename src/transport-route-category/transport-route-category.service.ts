@@ -40,8 +40,13 @@ export class TransportRouteCategoryService {
       .leftJoinAndSelect('category.createdBy', 'createdBy')
       .leftJoinAndSelect('category.updatedBy', 'updatedBy')
       .where('category.deletedAt IS NULL')
-      .andWhere('category.name iLIKE :searchQuery', { searchQuery: `%${searchQuery}%` })
       .orderBy('category.createdAt', 'DESC');
+
+    if (searchQuery) {
+      queryBuilder.andWhere('category.name iLIKE :searchQuery', {
+        searchQuery: `%${searchQuery}%`,
+      });
+    }
 
     return await paginate<TransportRouteCategory>(queryBuilder, options);
   }

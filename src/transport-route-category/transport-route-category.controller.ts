@@ -35,7 +35,7 @@ export class TransportRouteCategoryController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.OPERATOR)
+  @Roles(Role.ADMIN, Role.OPERATOR, Role.CAIXA, Role.COBRADOR)
   findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 50,

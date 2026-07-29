@@ -22,8 +22,13 @@ export class ShiftsService {
     const qb = this.shiftRepository
       .createQueryBuilder('shift')
       .where('shift.deletedAt IS NULL')
-      .andWhere('shift.name iLIKE :searchQuery', { searchQuery: `%${searchQuery}%` })
       .orderBy('shift.createdAt', 'DESC');
+
+    if (searchQuery) {
+      qb.andWhere('shift.name iLIKE :searchQuery', {
+        searchQuery: `%${searchQuery}%`,
+      });
+    }
 
     return await paginate<Shift>(qb, options);
   }
