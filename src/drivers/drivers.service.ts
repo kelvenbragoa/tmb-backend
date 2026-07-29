@@ -22,8 +22,13 @@ export class DriversService {
     const queryBuilder = this.driverRepository
       .createQueryBuilder('driver')
       .where('driver.deletedAt IS NULL')
-      .andWhere('driver.name iLIKE :searchQuery', { searchQuery: `%${searchQuery}%` })
       .orderBy('driver.createdAt', 'DESC');
+
+    if (searchQuery) {
+      queryBuilder.andWhere('driver.name iLIKE :searchQuery', {
+        searchQuery: `%${searchQuery}%`,
+      });
+    }
 
     return await paginate<Driver>(queryBuilder, options);
   }
