@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Unique } from 'typeorm';
 import { BaseEntityWithAudit } from '../../common/base-entity.entity';
 import { Session } from '../../session/entities/session.entity';
 import { RouteTicket } from '../../route-ticket/entities/route-ticket.entity';
@@ -10,6 +10,7 @@ import { TransportRouteStop } from 'src/transport-route-stop/entities/transport-
 import { Driver } from '../../drivers/entities/driver.entity';
 
 @Entity('ticket_sales')
+@Unique('UQ_ticket_sales_session_reference', ['session_id', 'reference'])
 export class TicketSale extends BaseEntityWithAudit {
   @PrimaryGeneratedColumn()
   id: number;
