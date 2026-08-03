@@ -22,7 +22,7 @@ export class DriversService {
     const queryBuilder = this.driverRepository
       .createQueryBuilder('driver')
       .where('driver.deletedAt IS NULL')
-      .orderBy('driver.createdAt', 'DESC');
+      .orderBy('driver.name', 'ASC');
 
     if (searchQuery) {
       queryBuilder.andWhere('driver.name iLIKE :searchQuery', {
