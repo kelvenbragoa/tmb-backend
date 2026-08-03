@@ -80,7 +80,7 @@ export class VehicleService {
 
     return await paginate<Vehicle>(this.vehicleRepository, options, {
       relations: ['routes'],
-      order: { createdAt: 'DESC' },
+      order: { name: 'ASC' },
       where: whereCondition,
     });
   }
